@@ -1,0 +1,5 @@
+<Project>
+  <ItemGroup>
+    <PackageReference Update="ConsoleAppFramework" Version="4.2.4" />
+  </ItemGroup>
+</Project>
