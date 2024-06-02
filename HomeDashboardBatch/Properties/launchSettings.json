@@ -2,7 +2,7 @@
   "profiles": {
     "HomeDashboardBatch": {
       "commandName": "Project",
-      "commandLineArgs": "money-forward-scraping update-from-days --days 30",
+      "commandLineArgs": " stock-price-investment-trust-scraping update",
       "remoteDebugEnabled": false
     }
   }

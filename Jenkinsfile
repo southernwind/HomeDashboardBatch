@@ -20,7 +20,6 @@ node {
     stage('Deploy'){
       sh 'scp -pr -i ${SSH_KEY} ./HomeDashboardBatch/bin/Release/net8.0/* ${SSH_USER}@batch-server.localnet:/opt/dashboard-batch'
       sh 'ssh -i ${SSH_KEY} ${SSH_USER}@batch-server.localnet chmod 755 /opt/dashboard-batch'
-      sh 'ssh -i ${SSH_KEY} ${SSH_USER}@batch-server.localnet chown rundeck:rundeck /opt/dashboard-batch/*'
     }
   }
 
