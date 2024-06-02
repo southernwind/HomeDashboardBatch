@@ -1,0 +1,9 @@
+{
+  "profiles": {
+    "HomeDashboardBatch": {
+      "commandName": "Project",
+      "commandLineArgs": "money-forward-scraping update-from-days --days 30",
+      "remoteDebugEnabled": false
+    }
+  }
+}

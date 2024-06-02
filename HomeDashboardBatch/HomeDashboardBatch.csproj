@@ -6,8 +6,27 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="appsettings.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="ConsoleAppFramework" />
+    <PackageReference Include="HtmlAgilityPack" />
+    <PackageReference Include="HtmlAgilityPack.CssSelectors.NetCore" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
+    <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\HomeDashboardBackend\Database\Database.csproj" />
+    <ProjectReference Include="..\ScrapingLibrary\ScrapingLibrary\ScrapingLibrary.csproj" />
   </ItemGroup>
 
 </Project>

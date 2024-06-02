@@ -7,6 +7,7 @@ wwwroot/
 package-lock.json
 appsettings.json
 appsettings.*.json
+!appsettings.default.json
 
 # User-specific files
 *.rsuser

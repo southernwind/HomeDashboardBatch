@@ -4,10 +4,11 @@ node {
   }
 
   stage('Configuration'){
+    configFileProvider([configFile(fileId: '709bdcd4-af58-435d-8daf-cdadfc9c0cec', targetLocation: 'HomeDashboardBatch/appsettings.json')]) {}
   }
 
   stage('Build'){
-    dotnetBuild configuration: 'Release', project: 'HomeDashboard.sln', sdk: '.NET8', unstableIfWarnings: true
+    dotnetBuild configuration: 'Release', project: 'HomeDashboardBatch.sln', sdk: '.NET8', unstableIfWarnings: true
   }
 
   withCredentials( \
@@ -17,7 +18,9 @@ node {
         usernameVariable: 'SSH_USER')]) {
 
     stage('Deploy'){
-      sh 'scp -pr -i ${SSH_KEY} ./HomeDashboardBatch/bin/Release/net8/* ${SSH_USER}@batch-server.localnet:/opt/back-end-api-service'
+      sh 'scp -pr -i ${SSH_KEY} ./HomeDashboardBatch/bin/Release/net8.0/* ${SSH_USER}@batch-server.localnet:/opt/dashboard-batch'
+      sh 'ssh -i ${SSH_KEY} ${SSH_USER}@batch-server.localnet chmod 755 /opt/dashboard-batch'
+      sh 'ssh -i ${SSH_KEY} ${SSH_USER}@batch-server.localnet chown rundeck:rundeck /opt/dashboard-batch/*'
     }
   }
 

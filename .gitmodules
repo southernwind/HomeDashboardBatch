@@ -1,0 +1,6 @@
+[submodule "HomeDashboardBackend"]
+	path = HomeDashboardBackend
+	url = https://github.com/southernwind/HomeDashboardBackend.git
+[submodule "ScrapingLibrary"]
+	path = ScrapingLibrary
+	url = https://github.com/southernwind/ScrapingLibrary.git
