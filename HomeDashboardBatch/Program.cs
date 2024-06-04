@@ -1,15 +1,17 @@
+using ConsoleAppFramework;
+
 using DataBase;
 
 using HomeDashboardBatch.Configs.Parameters.Financial;
+using HomeDashboardBatch.Tasks.Financial;
 using HomeDashboardBatch.Tasks.Financial.Investment;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.DependencyInjection.Extensions;
+using Microsoft.Extensions.Hosting;
 
-
-var app = ConsoleApp.CreateBuilder(args)
+using var host = Host.CreateDefaultBuilder()
 	.ConfigureServices((hostContext, services) => {
 		var connectionString = hostContext.Configuration.GetConnectionString("Database");
 		services.AddDbContext<HomeServerDbContext>(options =>
@@ -20,8 +22,11 @@ var app = ConsoleApp.CreateBuilder(args)
 			.AddScoped<IScrapingServiceTarget, Minkabu>()
 			.AddScoped<IScrapingServiceTarget, YahooFinanceCurrency>()
 			.BuildServiceProvider();
-	})
-	.Build();
+	}).Build();
+ConsoleApp.ServiceProvider = host.Services;
 
-app.AddAllCommandType();
-app.Run();
+var app = ConsoleApp.Create();
+
+app.Add<MoneyForwardScraping>("money-forward-scraping");
+app.Add<StockPriceInvestmentTrustScraping>("stock-price-investment-trust-scraping");
+app.Run(args);

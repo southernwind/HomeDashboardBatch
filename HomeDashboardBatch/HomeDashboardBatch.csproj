@@ -21,6 +21,7 @@
     <PackageReference Include="HtmlAgilityPack" />
     <PackageReference Include="HtmlAgilityPack.CssSelectors.NetCore" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Pomelo.EntityFrameworkCore.MySql" />
   </ItemGroup>

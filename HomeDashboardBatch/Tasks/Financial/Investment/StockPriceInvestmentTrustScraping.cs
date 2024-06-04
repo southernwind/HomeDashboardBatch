@@ -1,26 +1,34 @@
 using DataBase;
 
+using ConsoleAppFramework;
+
 using HomeDashboardBatch.Tasks.Financial.Investment;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
+
 namespace HomeDashboardBatch.Tasks.Financial;
-public class StockPriceInvestmentTrustScraping : ConsoleAppBase {
+public class StockPriceInvestmentTrustScraping {
 	private readonly ILogger _logger;
 	private readonly HomeServerDbContext _db;
 	private readonly IServiceProvider _serviceProvider;
 	public StockPriceInvestmentTrustScraping(
 		ILogger<StockPriceInvestmentTrustScraping> logger,
 		HomeServerDbContext db,
-		IServiceProvider serviceProvider) : base() {
+		IServiceProvider serviceProvider) {
 		this._logger = logger;
 		this._db = db;
 		this._serviceProvider = serviceProvider;
 	}
 
-	[Command("update", "証券サイト等から情報を取得し、株価データの更新を行う。")]
+
+	/// <summary>
+	/// 証券サイト等から情報を取得し、株価データの更新を行う。	
+	/// </summary>
+	/// <returns>実行結果</returns>
+	[Command("update")]
 	public async Task<int> Update() {
 		var ipList = await this._db.InvestmentProducts.Where(x => x.Enable).ToArrayAsync();
 		var icuList = await this._db.InvestmentCurrencyUnits.Where(x => x.Key != null).ToArrayAsync();

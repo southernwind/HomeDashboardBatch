@@ -4,6 +4,8 @@ using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
 using System.Web;
 
+using ConsoleAppFramework;
+
 using Database.Tables;
 
 using DataBase;
@@ -18,12 +20,12 @@ using Microsoft.Extensions.Options;
 using ScrapingLibrary;
 
 namespace HomeDashboardBatch.Tasks.Financial;
-public class MoneyForwardScraping : ConsoleAppBase {
+public class MoneyForwardScraping {
 	private readonly ILogger _logger;
 	private readonly HomeServerDbContext _db;
 	private readonly HttpClientWrapper _hcw;
 	private readonly ConfigMoneyForwardScraping _config;
-	public MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, HomeServerDbContext db, IOptions<ConfigMoneyForwardScraping> config) : base() {
+	public MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, HomeServerDbContext db, IOptions<ConfigMoneyForwardScraping> config) {
 		this._logger = logger;
 		this._db = db;
 		this._hcw = new HttpClientWrapper();
@@ -31,13 +33,13 @@ public class MoneyForwardScraping : ConsoleAppBase {
 	}
 
 	/// <summary>
-	/// 更新処理開始
+	/// 支出・資産をMoneyForwardから取得して更新(日数指定)
 	/// </summary>
-	/// <param name="days">取得日数</param>
+	/// <param name="days">-d,取得日数</param>
 	/// <returns>処理結果</returns>
-	[Command("update-from-days", "支出・資産をMoneyForwardから取得して更新")]
+	[Command("update-from-days")]
 	public async Task<int> UpdateFromDays(
-		[Option("d", "取得日数")] int days) {
+		int days) {
 		this._logger.LogInformation($"直近{days}日間のの財務データベース更新");
 		var to = DateTime.Now.Date;
 		var from = to.AddDays(-days);
@@ -45,15 +47,15 @@ public class MoneyForwardScraping : ConsoleAppBase {
 	}
 
 	/// <summary>
-	/// 更新処理開始
+	/// 支出・資産をMoneyForwardから取得して更新(期間指定)
 	/// </summary>
-	/// <param name="from">取得対象開始日</param>
-	/// <param name="to">取得対象終了日</param>
+	/// <param name="from">-f,取得対象開始日</param>
+	/// <param name="to">-t,取得対象終了日</param>
 	/// <returns>処理結果</returns>
-	[Command("update-from-term", "支出・資産をMoneyForwardから取得して更新")]
+	[Command("update-from-term")]
 	public async Task<int> UpdateFromTerm(
-		[Option("f", "取得対象開始日")] DateTime from,
-		[Option("t", "取得対象終了日")] DateTime to) {
+		DateTime from,
+		DateTime to) {
 		this._logger.LogInformation($"{from}-{to}の財務データベース更新開始");
 
 		await using var tran = await this._db.Database.BeginTransactionAsync();
