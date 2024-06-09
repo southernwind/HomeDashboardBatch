@@ -3,6 +3,7 @@ using ConsoleAppFramework;
 using DataBase;
 
 using HomeDashboardBatch.Configs.Parameters.Financial;
+using HomeDashboardBatch.Filters;
 using HomeDashboardBatch.Tasks.Financial;
 using HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 using Microsoft.EntityFrameworkCore;
@@ -28,4 +29,5 @@ var app = ConsoleApp.Create();
 
 app.Add<MoneyForwardScraping>("money-forward-scraping");
 app.Add<StockPriceInvestmentTrustScraping>("stock-price-investment-trust-scraping");
+app.UseFilter<ErrorHandlerFilter>();
 app.Run(args);
