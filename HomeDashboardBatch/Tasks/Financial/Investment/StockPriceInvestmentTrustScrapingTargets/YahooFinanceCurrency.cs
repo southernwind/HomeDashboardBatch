@@ -5,14 +5,10 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
 namespace HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
-public class YahooFinanceCurrency : YahooFinanceBase<YahooFinanceCurrency> {
-	private readonly HomeServerDbContext _dbContext;
-
-	public YahooFinanceCurrency(
-		ILogger<YahooFinanceCurrency> logger,
-		HomeServerDbContext dbContext) : base(logger) {
-		this._dbContext = dbContext;
-	}
+public class YahooFinanceCurrency(
+	ILogger<YahooFinanceCurrency> logger,
+	HomeServerDbContext dbContext) : YahooFinanceBase<YahooFinanceCurrency>(logger) {
+	private readonly HomeServerDbContext _dbContext = dbContext;
 
 	public override async Task ExecuteAsync(int id, string key) {
 		await using var transaction = await this._dbContext.Database.BeginTransactionAsync();
@@ -26,7 +22,7 @@ public class YahooFinanceCurrency : YahooFinanceBase<YahooFinanceCurrency> {
 		.Select(x => x.Last())
 		.ToArray();
 
-		if (!records.Any()) {
+		if (records.Length == 0) {
 			throw new BatchException("取得件数0件");
 		}
 
@@ -41,9 +37,9 @@ public class YahooFinanceCurrency : YahooFinanceBase<YahooFinanceCurrency> {
 			.ToArray();
 
 		this._dbContext.InvestmentCurrencyRates.RemoveRange(existing);
-		this._logger.LogInformation($"{existing.Length}件削除");
+		this._logger.LogInformation("{length}件削除", existing.Length);
 		await this._dbContext.InvestmentCurrencyRates.AddRangeAsync(records);
-		this._logger.LogInformation($"{records.Length}件登録");
+		this._logger.LogInformation("{length}件登録", records.Length);
 		await this._dbContext.SaveChangesAsync();
 		this._logger.LogInformation($"SaveChangesAsync");
 		await transaction.CommitAsync();

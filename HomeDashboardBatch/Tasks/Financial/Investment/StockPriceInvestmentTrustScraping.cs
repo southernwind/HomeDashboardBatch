@@ -9,18 +9,13 @@ using HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScr
 
 
 namespace HomeDashboardBatch.Tasks.Financial;
-public class StockPriceInvestmentTrustScraping {
-	private readonly ILogger _logger;
-	private readonly HomeServerDbContext _db;
-	private readonly IServiceProvider _serviceProvider;
-	public StockPriceInvestmentTrustScraping(
-		ILogger<StockPriceInvestmentTrustScraping> logger,
-		HomeServerDbContext db,
-		IServiceProvider serviceProvider) {
-		this._logger = logger;
-		this._db = db;
-		this._serviceProvider = serviceProvider;
-	}
+public class StockPriceInvestmentTrustScraping(
+	ILogger<StockPriceInvestmentTrustScraping> logger,
+	HomeServerDbContext db,
+	IServiceProvider serviceProvider) {
+	private readonly ILogger _logger = logger;
+	private readonly HomeServerDbContext _db = db;
+	private readonly IServiceProvider _serviceProvider = serviceProvider;
 
 
 	/// <summary>
@@ -36,10 +31,10 @@ public class StockPriceInvestmentTrustScraping {
 
 		list.AddRange(icuList.Select(x => new { x.Id, x.Key, Type = typeof(YahooFinanceCurrency).FullName }).ToArray()!);
 		foreach (var item in list) {
-			this._logger.LogInformation($"ID:{item.Id} 取得元:{item.Type} 取得開始。");
+			this._logger.LogInformation("ID:{id} 取得元:{type} 取得開始。",item.Id,item.Type);
 			await targets.Single(x => x.GetType().FullName == item.Type)
 				.ExecuteAsync(item.Id, item.Key);
-			this._logger.LogInformation($"ID:{item.Id} 取得完了。");
+			this._logger.LogInformation("ID:{id} 取得完了。", item.Id);
 			await Task.Delay(5000);
 		}
 		return 0;

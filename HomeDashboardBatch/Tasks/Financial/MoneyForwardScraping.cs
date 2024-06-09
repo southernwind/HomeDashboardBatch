@@ -20,17 +20,13 @@ using Microsoft.Extensions.Options;
 using ScrapingLibrary;
 
 namespace HomeDashboardBatch.Tasks.Financial;
-public class MoneyForwardScraping {
-	private readonly ILogger _logger;
-	private readonly HomeServerDbContext _db;
-	private readonly HttpClientWrapper _hcw;
-	private readonly ConfigMoneyForwardScraping _config;
-	public MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, HomeServerDbContext db, IOptions<ConfigMoneyForwardScraping> config) {
-		this._logger = logger;
-		this._db = db;
-		this._hcw = new HttpClientWrapper();
-		this._config = config.Value;
-	}
+public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, HomeServerDbContext db, IOptions<ConfigMoneyForwardScraping> config) {
+	private readonly ILogger _logger = logger;
+	private readonly HomeServerDbContext _db = db;
+	private readonly HttpClientWrapper _hcw = new();
+	private readonly ConfigMoneyForwardScraping _config = config.Value;
+	[GeneratedRegex(@"^.*gon\.authorizationParams=({.*?}).*$", RegexOptions.Singleline)]
+	private partial Regex _loginCheckRegex();
 
 	/// <summary>
 	/// 支出・資産をMoneyForwardから取得して更新(日数指定)
@@ -40,7 +36,7 @@ public class MoneyForwardScraping {
 	[Command("update-from-days")]
 	public async Task<int> UpdateFromDays(
 		int days) {
-		this._logger.LogInformation($"直近{days}日間のの財務データベース更新");
+		this._logger.LogInformation("直近{days}日間のの財務データベース更新", days);
 		var to = DateTime.Now.Date;
 		var from = to.AddDays(-days);
 		return await this.UpdateFromTerm(from, to);
@@ -56,7 +52,7 @@ public class MoneyForwardScraping {
 	public async Task<int> UpdateFromTerm(
 		DateTime from,
 		DateTime to) {
-		this._logger.LogInformation($"{from}-{to}の財務データベース更新開始");
+		this._logger.LogInformation("{from}-{to}の財務データベース更新開始", from, to);
 
 		await using var tran = await this._db.Database.BeginTransactionAsync();
 
@@ -80,10 +76,10 @@ public class MoneyForwardScraping {
 				existsRecords
 					.Where(er => er.IsLocked)
 					.All(er => er.Institution != x.Institution || er.Category != x.Category)));
-			this._logger.LogDebug($"{ma.First().Date:yyyy/MM/dd}資産推移{assets.Length}件登録");
+			this._logger.LogDebug("{date:yyyy/MM/dd}資産推移{length}件登録", ma.First().Date, assets.Length);
 			maCount += assets.Length;
 		}
-		this._logger.LogInformation($"資産推移 計{maCount}件登録");
+		this._logger.LogInformation("資産推移 計{maCount}件登録",maCount);
 
 		// 取引履歴
 		var mtCount = 0;
@@ -97,17 +93,17 @@ public class MoneyForwardScraping {
 						existsRecords
 							.Where(er => er.IsLocked)
 							.All(er => er.TransactionId != x.TransactionId)));
-			this._logger.LogInformation($"{mt.First()?.Date:yyyy/MM}取引履歴{mt.Length}件登録");
+			this._logger.LogInformation("{date:yyyy/MM}取引履歴{length}件登録", mt.First()?.Date, mt.Length);
 			mtCount += mt.Length;
 		}
-		this._logger.LogInformation($"取引履歴 計{mtCount}件登録");
+		this._logger.LogInformation("取引履歴 計{mtCount}件登録", mtCount);
 
 		await this._db.SaveChangesAsync();
 		this._logger.LogDebug("SaveChanges");
 		await tran.CommitAsync();
 		this._logger.LogDebug("Commit");
 
-		this._logger.LogInformation($"{from}-{to}の財務データベース更新正常終了");
+		this._logger.LogInformation("{from}-{to}の財務データベース更新正常終了", from, to);
 
 		return 0;
 	}
@@ -151,7 +147,7 @@ public class MoneyForwardScraping {
 					Memo = tdList[7].InnerText.Trim()
 				});
 
-			if (list.Count() > 0) {
+			if (list.Any()) {
 				yield return list.ToArray();
 			}
 		}
@@ -179,7 +175,7 @@ public class MoneyForwardScraping {
 					Category = tdList[1].InnerText.Trim(),
 					Amount = int.Parse(tdList[2].InnerText.Trim().Replace("円", "").Replace(",", ""))
 				});
-			if (list.Count() > 0) {
+			if (list.Any()) {
 				yield return list.ToArray();
 			}
 		}
@@ -193,11 +189,11 @@ public class MoneyForwardScraping {
 			throw new BatchException($"HTTPリクエスト1 エラー statusCode={response1.StatusCode} url={response1.RequestMessage?.RequestUri}");
 		}
 		var htmlDoc1 = await response1.ToHtmlDocumentAsync();
-		if (!Regex.IsMatch(htmlDoc1.Text, @"^.*gon\.authorizationParams=({.*?}).*$", RegexOptions.Singleline)) {
+		if (!this._loginCheckRegex().IsMatch(htmlDoc1.Text)) {
 			// ログイン済みとみなす
 			return;
 		}
-		var json1 = Regex.Replace(htmlDoc1.Text, @"^.*gon\.authorizationParams=({.*?}).*$", "$1", RegexOptions.Singleline);
+		var json1 = this._loginCheckRegex().Replace(htmlDoc1.Text, "$1");
 		var urlParams1 = JsonSerializer.Deserialize<UrlParams>(json1) ?? throw new BatchException("json1パラメータ異常");
 		var csrfParam = htmlDoc1.DocumentNode.QuerySelector(@"meta[name='csrf-param']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-param取得エラー");
 		var csrfToken = htmlDoc1.DocumentNode.QuerySelector(@"meta[name='csrf-token']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-token取得エラー");
@@ -225,9 +221,6 @@ public class MoneyForwardScraping {
 		}
 	}
 
-	private static string Encode(string text) {
-		return HttpUtility.UrlEncode(text);
-	}
 	private class UrlParams {
 		[JsonPropertyName("clientId")]
 		public string ClientId {
