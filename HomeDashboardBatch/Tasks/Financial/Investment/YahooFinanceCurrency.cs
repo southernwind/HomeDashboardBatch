@@ -23,7 +23,10 @@ public class YahooFinanceCurrency : YahooFinanceBase<YahooFinanceCurrency> {
 			InvestmentCurrencyUnitId = id,
 			Date = cr.Date,
 			Value = cr.AdjClose ?? 0
-		}).ToArray();
+		}).GroupBy(x => x.Date)
+		.Select(x => x.Last())
+		.ToArray();
+
 		if (!records.Any()) {
 			throw new BatchException("取得件数0件");
 		}
