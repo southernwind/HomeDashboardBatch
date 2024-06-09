@@ -2,12 +2,11 @@ using System.Globalization;
 
 using CsvHelper.Configuration;
 using CsvHelper.Configuration.Attributes;
-
 using Microsoft.Extensions.Logging;
 
 using ScrapingLibrary;
 
-namespace HomeDashboardBatch.Tasks.Financial.Investment; 
+namespace HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 public abstract class YahooFinanceBase<T> : IScrapingServiceTarget {
 	private readonly HttpClientWrapper _httpClient;
 	protected readonly ILogger<T> _logger;

@@ -1,4 +1,4 @@
-namespace HomeDashboardBatch.Tasks.Financial.Investment; 
+namespace HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 public interface IScrapingServiceTarget : IDisposable {
 	/// <summary>
 	/// スクレイピング実行

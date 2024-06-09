@@ -2,11 +2,10 @@ using DataBase;
 
 using ConsoleAppFramework;
 
-using HomeDashboardBatch.Tasks.Financial.Investment;
-
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 
 
 namespace HomeDashboardBatch.Tasks.Financial;

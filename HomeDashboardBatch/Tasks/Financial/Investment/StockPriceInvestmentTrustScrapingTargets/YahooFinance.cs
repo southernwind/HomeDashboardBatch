@@ -4,12 +4,12 @@ using DataBase;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
-namespace HomeDashboardBatch.Tasks.Financial.Investment; 
+namespace HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 public class YahooFinance : YahooFinanceBase<YahooFinance> {
 	private readonly HomeServerDbContext _dbContext;
 
 	public YahooFinance(ILogger<YahooFinance> logger,
-		HomeServerDbContext dbContext) :base(logger){
+		HomeServerDbContext dbContext) : base(logger) {
 		this._dbContext = dbContext;
 	}
 
