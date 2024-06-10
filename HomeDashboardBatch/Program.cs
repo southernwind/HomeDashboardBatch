@@ -5,6 +5,7 @@ using DataBase;
 using HomeDashboardBatch.Configs.Parameters.Financial;
 using HomeDashboardBatch.Filters;
 using HomeDashboardBatch.Tasks.Financial;
+using HomeDashboardBatch.Tasks.Financial.Investment;
 using HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -28,6 +29,6 @@ ConsoleApp.ServiceProvider = host.Services;
 var app = ConsoleApp.Create();
 
 app.Add<MoneyForwardScraping>("money-forward-scraping");
-app.Add<StockPriceInvestmentTrustScraping>("stock-price-investment-trust-scraping");
+app.Add<InvestmentTask>("investment");
 app.UseFilter<ErrorHandlerFilter>();
 app.Run(args);

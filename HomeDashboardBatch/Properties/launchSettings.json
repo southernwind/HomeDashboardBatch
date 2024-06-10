@@ -2,7 +2,7 @@
   "profiles": {
     "HomeDashboardBatch": {
       "commandName": "Project",
-      "commandLineArgs": " stock-price-investment-trust-scraping update",
+      "commandLineArgs": "investment update-daily-asset-progress",
       "remoteDebugEnabled": false
     }
   }
