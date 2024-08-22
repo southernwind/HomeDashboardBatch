@@ -5,7 +5,6 @@ using DataBase;
 using HomeDashboardBatch.Configs.Parameters.Financial;
 using HomeDashboardBatch.Filters;
 using HomeDashboardBatch.Tasks.Financial;
-using HomeDashboardBatch.Tasks.Financial.Investment;
 using HomeDashboardBatch.Tasks.Financial.Investment.StockPriceInvestmentTrustScrapingTargets;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

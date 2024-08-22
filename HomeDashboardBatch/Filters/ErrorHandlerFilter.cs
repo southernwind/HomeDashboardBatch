@@ -12,8 +12,9 @@ internal class ErrorHandlerFilter(ConsoleAppFilter next,
 	public override async Task InvokeAsync(ConsoleAppContext context, CancellationToken cancellationToken) {
 		try {
 			await next.InvokeAsync(context, cancellationToken);
-		} catch (BatchException ex){
+		} catch (Exception ex){
 			logger.LogError(ex, "ErrorHandling : {message}", ex.Message);
+			throw;
 		}
 	}
 }
