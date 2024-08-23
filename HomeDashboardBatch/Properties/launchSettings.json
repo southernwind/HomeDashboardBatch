@@ -2,7 +2,7 @@
   "profiles": {
     "HomeDashboardBatch": {
       "commandName": "Project",
-      "commandLineArgs": "investment update-daily-asset-progress",
+      "commandLineArgs": "money-forward-scraping update-from-days --days 60",
       "remoteDebugEnabled": false
     }
   }

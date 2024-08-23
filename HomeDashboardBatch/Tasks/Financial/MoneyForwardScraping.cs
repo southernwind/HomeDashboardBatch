@@ -1,8 +1,8 @@
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.RegularExpressions;
-using System.Web;
 
 using ConsoleAppFramework;
 
@@ -25,6 +25,10 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 	private readonly HomeServerDbContext _db = db;
 	private readonly HttpClientWrapper _hcw = new();
 	private readonly ConfigMoneyForwardScraping _config = config.Value;
+	private readonly string _cookieFilePath =
+		RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ?
+		"./MoneyForwardCookies":
+		"/var/tmp/MoneyForwardCookies";
 	[GeneratedRegex(@"^.*gon\.authorizationParams=({.*?}).*$", RegexOptions.Singleline)]
 	private partial Regex _loginCheckRegex();
 
@@ -53,7 +57,7 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 		DateTime from,
 		DateTime to) {
 		this._logger.LogInformation("{from}-{to}の財務データベース更新開始", from, to);
-
+		await this.LoadCookies();
 		await using var tran = await this._db.Database.BeginTransactionAsync();
 
 		// 資産推移
@@ -104,6 +108,7 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 		this._logger.LogDebug("Commit");
 
 		this._logger.LogInformation("{from}-{to}の財務データベース更新正常終了", from, to);
+		await this.SaveCookies();
 
 		return 0;
 	}
@@ -214,11 +219,63 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 			});
 		var response2 = await this._hcw.PostAsync("https://id.moneyforward.com/sign_in/email", content);
 		if (!response2.IsSuccessStatusCode) {
-			throw new BatchException($"HTTPリクエスト3 エラー statusCode={response2.StatusCode} url={response2.RequestMessage?.RequestUri}");
+			throw new BatchException($"HTTPリクエスト2 エラー statusCode={response2.StatusCode} url={response2.RequestMessage?.RequestUri}");
 		}
-		if (response2.RequestMessage?.RequestUri?.AbsoluteUri != "https://moneyforward.com/cf") {
-			throw new BatchException("ログイン失敗");
+		if (response2.RequestMessage?.RequestUri?.AbsoluteUri?.StartsWith("https://id.moneyforward.com/email_otp?") ?? false) {
+			var OtpFilePath = Path.GetTempPath() + $"moneyforward-otp[{DateTime.Now.ToFileTimeUtc()}].txt";
+			this._logger.LogInformation("OTPパスワード配置待ち[{otpFilePath}]", OtpFilePath);
+			for (var i = 0; i < 100; i++) {
+				await Task.Delay(3000);
+				if (File.Exists(OtpFilePath) && File.ReadAllText(OtpFilePath).Trim().Length == 6) {
+					break;
+				}
+			}
+			var otp = File.ReadAllText(OtpFilePath).Trim();
+			var htmlDoc2 = await response2.ToHtmlDocumentAsync();
+			var json2 = this._loginCheckRegex().Replace(htmlDoc1.Text, "$1");
+			var urlParams2 = JsonSerializer.Deserialize<UrlParams>(json2) ?? throw new BatchException("json2パラメータ異常");
+			var csrfParam2 = htmlDoc2.DocumentNode.QuerySelector(@"meta[name='csrf-param']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-param2取得エラー");
+			var csrfToken2 = htmlDoc2.DocumentNode.QuerySelector(@"meta[name='csrf-token']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-token2取得エラー");
+
+			// パスワード入力画面
+			var content2 = new FormUrlEncodedContent(new Dictionary<string, string> {
+				{ csrfParam2, csrfToken2},
+				{ "_method","post" },
+				{ "clientId", urlParams2.ClientId},
+				{ "redirectUri", urlParams2.RedirectUri},
+				{ "responseType", urlParams2.ResponseType},
+				{ "scope", urlParams2.Scope},
+				{ "state", urlParams2.State},
+				{ "nonce", urlParams2.Nonce},
+				{ "selectAccount", urlParams2.SelectAccount},
+				{ "email_otp", otp},
+			});
+
+			var response3 =  await this._hcw.PostAsync("https://id.moneyforward.com/email_otp",content2);
+			if (!response2.IsSuccessStatusCode) {
+				throw new BatchException($"HTTPリクエスト3 エラー statusCode={response3.StatusCode} url={response3.RequestMessage?.RequestUri}");
+			}
+			if (response3.RequestMessage?.RequestUri?.AbsoluteUri != "https://moneyforward.com/cf") {
+				throw new BatchException("ログイン失敗");
+			}
+		} else {
+			if (response2.RequestMessage?.RequestUri?.AbsoluteUri != "https://moneyforward.com/cf") {
+				throw new BatchException("ログイン失敗");
+			}
 		}
+	}
+
+	private async Task LoadCookies() {
+		if(!File.Exists(this._cookieFilePath)) {
+			return;
+		}
+		var binary = await File.ReadAllBytesAsync(this._cookieFilePath);
+		this._hcw.DeserializeCookie(binary);
+	}
+
+	private async Task SaveCookies() {
+		var binary = this._hcw.SerializeCookie();
+		await File.WriteAllBytesAsync(this._cookieFilePath, binary);
 	}
 
 	private class UrlParams {
