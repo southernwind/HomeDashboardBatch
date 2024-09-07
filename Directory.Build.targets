@@ -1,6 +1,6 @@
 <Project>
   <ItemGroup>
-    <PackageReference Update="ConsoleAppFramework" Version="5.1.0" />
+    <PackageReference Update="ConsoleAppFramework" Version="5.2.3" />
     <PackageReference Update="HtmlAgilityPack" Version="1.11.61"/>
     <PackageReference Update="HtmlAgilityPack.CssSelectors.NetCore" Version="1.2.1" />
     <PackageReference Update="Microsoft.Extensions.Options.ConfigurationExtensions" Version="8.0.0" />

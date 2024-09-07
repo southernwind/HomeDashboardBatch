@@ -2,6 +2,9 @@ using System.Globalization;
 
 using CsvHelper.Configuration;
 using CsvHelper.Configuration.Attributes;
+
+using HtmlAgilityPack.CssSelectors.NetCore;
+
 using Microsoft.Extensions.Logging;
 
 using ScrapingLibrary;
@@ -16,15 +19,34 @@ public abstract class YahooFinanceBase<T> : IScrapingServiceTarget {
 	}
 
 	protected async Task<List<YahooFinanceRecord>> GetRecords(string key) {
-		var unixTime = (int)DateTime.UtcNow.ToUniversalTime().Subtract(new DateTime(1970, 1, 1)).TotalSeconds;
-		var days30 = 120 * 24 * 60 * 60;
-		var url = $"https://query1.finance.yahoo.com/v7/finance/download/{key}?period1={unixTime - days30}&period2={unixTime}&interval=1d&events=history&includeAdjustedClose=true";
+		var url = $"https://finance.yahoo.com/quote/{key}/history/";
 		this._logger.LogInformation($"{url}の情報を取得開始");
 		var response = await this._httpClient.GetAsync(url);
 		if (!response.IsSuccessStatusCode) {
 			throw new BatchException($"HTTPステータスコード異常: {response.StatusCode}");
 		}
-		return await response.ToCsvRecordAsync<YahooFinanceRecord>(new CsvConfiguration(CultureInfo.CurrentCulture) { HasHeaderRecord = true });
+		var html = await response.ToHtmlDocumentAsync();
+		var records = html.DocumentNode.QuerySelectorAll("div.container[data-testid=history-table] div.table-container table tr")
+			.Select(x => {
+				var tds = x.QuerySelectorAll("td").Select(x => x.InnerText).ToArray();
+				if (tds.Length != 7) {
+					return null;
+				}
+				return tds;
+			})
+			.Where(x => x != null)
+			.Select(x => {
+			return new YahooFinanceRecord() {
+				Date = DateTime.Parse(x![0]),
+				Open = double.Parse(x[1]),
+				High = double.Parse(x[2]),
+				Low = double.Parse(x[3]),
+				Close = double.Parse(x[4]),
+				AdjClose = double.Parse(x[5]),
+				Volume = double.Parse(x[6] == "-" ? "0" : x[6])
+			};
+		}).ToList();
+		return records;
 	}
 
 
@@ -60,7 +82,7 @@ public class YahooFinanceRecord {
 		get;
 		set;
 	}
-	[Name("Adj Close")]
+
 	public double? AdjClose {
 		get;
 		set;
