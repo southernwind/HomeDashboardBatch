@@ -20,6 +20,7 @@ using var host = Host.CreateDefaultBuilder()
 			.AddScoped<IScrapingServiceTarget, SbiSecInvestmentTrust>()
 			.AddScoped<IScrapingServiceTarget, YahooFinance>()
 			.AddScoped<IScrapingServiceTarget, Minkabu>()
+			.AddScoped<IScrapingServiceTarget, MinkabuUs>()
 			.AddScoped<IScrapingServiceTarget, YahooFinanceCurrency>()
 			.BuildServiceProvider();
 	}).Build();
