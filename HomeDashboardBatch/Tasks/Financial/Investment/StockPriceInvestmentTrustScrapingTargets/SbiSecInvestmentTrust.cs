@@ -24,7 +24,6 @@ public class SbiSecInvestmentTrust : IScrapingServiceTarget {
 
 	public async Task ExecuteAsync(int investmentProductId, string key) {
 		await using var transaction = await this._dbContext.Database.BeginTransactionAsync();
-		this._dbContext.Database.ExecuteSqlRaw("SET sql_mode=''");
 		var url = $"https://site0.sbisec.co.jp/marble/fund/history/standardprice.do?fund_sec_code={key}";
 		this._logger.LogInformation($"{url}の情報を取得開始");
 		var response = await this._httpClient.GetAsync(url);
@@ -35,7 +34,7 @@ public class SbiSecInvestmentTrust : IScrapingServiceTarget {
 		var trs = htmlDoc.DocumentNode.QuerySelectorAll("#main .mgt10 .accTbl01 table tbody tr");
 		var records = trs.Select(tr => new InvestmentProductRate {
 			InvestmentProductId = investmentProductId,
-			Date = DateTime.Parse(tr.QuerySelector("th").InnerText),
+			Date = DateOnly.Parse(tr.QuerySelector("th").InnerText),
 			Value = int.Parse(tr.QuerySelectorAll("td").First().InnerText.Replace("円", "").Replace(",", ""))
 		}).ToArray();
 		if (!records.Any()) {

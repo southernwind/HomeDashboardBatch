@@ -15,7 +15,7 @@ using var host = Host.CreateDefaultBuilder()
 	.ConfigureServices((hostContext, services) => {
 		var connectionString = hostContext.Configuration.GetConnectionString("Database");
 		services.AddDbContext<HomeServerDbContext>(options =>
-			options.UseMySql(connectionString, ServerVersion.AutoDetect(connectionString)))
+			options.UseNpgsql(connectionString))
 			.Configure<ConfigMoneyForwardScraping>(hostContext.Configuration.GetRequiredSection("Parameters:Financial:MoneyForwardScraping"))
 			.AddScoped<IScrapingServiceTarget, SbiSecInvestmentTrust>()
 			.AddScoped<IScrapingServiceTarget, YahooFinance>()

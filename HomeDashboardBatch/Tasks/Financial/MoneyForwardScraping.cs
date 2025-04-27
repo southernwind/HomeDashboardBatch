@@ -41,7 +41,7 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 	public async Task<int> UpdateFromDays(
 		int days) {
 		this._logger.LogInformation("直近{days}日間のの財務データベース更新", days);
-		var to = DateTime.Now.Date;
+		var to = DateOnly.FromDateTime(DateTime.Now);
 		var from = to.AddDays(-days);
 		return await this.UpdateFromTerm(from, to);
 	}
@@ -54,8 +54,8 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 	/// <returns>処理結果</returns>
 	[Command("update-from-term")]
 	public async Task<int> UpdateFromTerm(
-		DateTime from,
-		DateTime to) {
+		DateOnly from,
+		DateOnly to) {
 		this._logger.LogInformation("{from}-{to}の財務データベース更新開始", from, to);
 		await this.LoadCookies();
 		await using var tran = await this._db.Database.BeginTransactionAsync();
@@ -117,9 +117,9 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 	/// 取引履歴の取得
 	/// </summary>
 	/// <returns></returns>
-	private async IAsyncEnumerable<MfTransaction[]> GetTransactions(DateTime from, DateTime to) {
+	private async IAsyncEnumerable<MfTransaction[]> GetTransactions(DateOnly from, DateOnly to) {
 		await this.LoginAsync();
-		for (var date = from; date <= to; date = new DateTime(date.AddMonths(1).Year, date.AddMonths(1).Month, 1)) {
+		for (var date = from; date <= to; date = new DateOnly(date.AddMonths(1).Year, date.AddMonths(1).Month, 1)) {
 			var year = date.Year;
 			var month = date.Month;
 			this._hcw.CookieContainer.Add(new Cookie("cf_last_fetch_from_date", $"{year}/{month:D2}/01", "/",
@@ -141,12 +141,12 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 				.Select(tr => tr.QuerySelectorAll("td"))
 				.Select(tdList => new MfTransaction {
 					TransactionId =
-						tdList[0].QuerySelector("input#user_asset_act_id").GetAttributeValue("value", null),
+						tdList[0].QuerySelector("input#user_asset_act_id").GetAttributeValue("value", ""),
 					IsCalculateTarget = tdList[0].QuerySelector("i.icon-check") != null,
-					Date = new DateTime(year, month, int.Parse(tdList[1].InnerText.Trim().Substring(3, 2))),
+					Date = new DateOnly(year, month, int.Parse(tdList[1].InnerText.Trim().Substring(3, 2))),
 					Content = tdList[2].InnerText.Trim(),
 					Amount = int.Parse(tdList[3].QuerySelector("span").InnerText.Trim().Replace(",", "")),
-					Institution = tdList[4].GetAttributeValue("title", null),
+					Institution = tdList[4].GetAttributeValue("title", ""),
 					LargeCategory = tdList[5].InnerText.Trim(),
 					MiddleCategory = tdList[6].InnerText.Trim(),
 					Memo = tdList[7].InnerText.Trim()
@@ -162,7 +162,7 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 	/// 資産推移の取得
 	/// </summary>
 	/// <returns></returns>
-	private async IAsyncEnumerable<MfAsset[]> GetAssets(DateTime from, DateTime to) {
+	private async IAsyncEnumerable<MfAsset[]> GetAssets(DateOnly from, DateOnly to) {
 		await this.LoginAsync();
 		for (var date = from; date <= to.AddDays(1); date = date.AddDays(1)) {
 			var response = await this._hcw.GetAsync($"https://moneyforward.com/bs/history/list/{date:yyyy-MM-dd}");
@@ -200,8 +200,8 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 		}
 		var json1 = this._loginCheckRegex().Replace(htmlDoc1.Text, "$1");
 		var urlParams1 = JsonSerializer.Deserialize<UrlParams>(json1) ?? throw new BatchException("json1パラメータ異常");
-		var csrfParam = htmlDoc1.DocumentNode.QuerySelector(@"meta[name='csrf-param']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-param取得エラー");
-		var csrfToken = htmlDoc1.DocumentNode.QuerySelector(@"meta[name='csrf-token']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-token取得エラー");
+		var csrfParam = htmlDoc1.DocumentNode.QuerySelector(@"meta[name='csrf-param']").GetAttributeValue("content", "") ?? throw new BatchException("csrf-param取得エラー");
+		var csrfToken = htmlDoc1.DocumentNode.QuerySelector(@"meta[name='csrf-token']").GetAttributeValue("content", "") ?? throw new BatchException("csrf-token取得エラー");
 
 		// パスワード入力画面
 		var content = new FormUrlEncodedContent(new Dictionary<string, string> {
@@ -234,8 +234,8 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 			var htmlDoc2 = await response2.ToHtmlDocumentAsync();
 			var json2 = this._loginCheckRegex().Replace(htmlDoc1.Text, "$1");
 			var urlParams2 = JsonSerializer.Deserialize<UrlParams>(json2) ?? throw new BatchException("json2パラメータ異常");
-			var csrfParam2 = htmlDoc2.DocumentNode.QuerySelector(@"meta[name='csrf-param']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-param2取得エラー");
-			var csrfToken2 = htmlDoc2.DocumentNode.QuerySelector(@"meta[name='csrf-token']").GetAttributeValue("content", null) ?? throw new BatchException("csrf-token2取得エラー");
+			var csrfParam2 = htmlDoc2.DocumentNode.QuerySelector(@"meta[name='csrf-param']").GetAttributeValue("content", "") ?? throw new BatchException("csrf-param2取得エラー");
+			var csrfToken2 = htmlDoc2.DocumentNode.QuerySelector(@"meta[name='csrf-token']").GetAttributeValue("content", "") ?? throw new BatchException("csrf-token2取得エラー");
 
 			// パスワード入力画面
 			var content2 = new FormUrlEncodedContent(new Dictionary<string, string> {

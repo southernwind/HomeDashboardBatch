@@ -21,7 +21,6 @@ public class Minkabu : IScrapingServiceTarget {
 
 	public async Task ExecuteAsync(int investmentProductId, string key) {
 		await using var transaction = await this._dbContext.Database.BeginTransactionAsync();
-		this._dbContext.Database.ExecuteSqlRaw("SET sql_mode=''");
 		var url = $"https://itf.minkabu.jp/json/funds/{key}/get_line_daily_json";
 		this._logger.LogInformation($"{url}の情報を取得開始");
 		var response = await this._httpClient.GetAsync(url);
@@ -36,7 +35,7 @@ public class Minkabu : IScrapingServiceTarget {
 		foreach (var record in json.data) {
 			var rate = new InvestmentProductRate {
 				InvestmentProductId = investmentProductId,
-				Date = DateTimeOffset.FromUnixTimeMilliseconds((long)record[0]).LocalDateTime,
+				Date = DateOnly.FromDateTime(DateTimeOffset.FromUnixTimeMilliseconds((long)record[0]).LocalDateTime),
 				Value = record[4]
 			};
 			records.Add(rate);

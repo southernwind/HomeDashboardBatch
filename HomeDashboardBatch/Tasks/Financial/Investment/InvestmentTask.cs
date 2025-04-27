@@ -50,81 +50,90 @@ public class InvestmentTask(
 		var deletedRowCount = await this._db.DailyAssetProgresses.ExecuteDeleteAsync();
 		this._logger.LogInformation("{deletedRowCount}件削除", deletedRowCount);
 		var addedRowCount = await this._db.Database.ExecuteSqlRawAsync(
-			@"
-insert into `DailyAssetProgresses`
-(`Date`, `InvestmentProductId`, `Rate`, `Amount`, `AverageRate`, `CurrencyRate`)
-with recursive dates(Date) as (
-	select
-		(select min(`Date`) from `InvestmentProductRates`)
-	union all
-	select adddate(`Date`,1)
-from dates where `Date` < (select max(`Date`) from `InvestmentProductRates`) )
-select
-	`sub1`.`Date` AS `Date`,
-    `sub1`.`InvestmentProductId` AS `InvestmentProductId`,
-    `sub1`.`Rate` AS `Rate`,
-    `sub1`.`Amount` AS `Amount`,
-    `sub1`.`AverageRate` AS `AverageRate`,
-    `sub1`.`CurrencyRate` AS `CurrencyRate`
-from
-    (select
-        `ip`.`InvestmentProductId` AS `InvestmentProductId`,
-        `ip`.`Name` AS `ProductName`,
-        `ip`.`Category` AS `Category`,
-        `ip`.`Type` AS `Type`,
-        `ip`.`InvestmentCurrencyUnitId` AS `InvestmentCurrencyUnitId`,
-        `icu`.`Name` AS `CurrencyName`,
-        `dates`.`Date` AS `Date`,
-        (
-        select
-            sum(`ipa`.`Amount`)
-        from
-            `InvestmentProductAmounts` `ipa`
-        where
-            `ip`.`InvestmentProductId` = `ipa`.`InvestmentProductId`
-            and `ipa`.`Date` <= `dates`.`Date`) AS `Amount`,
-        (
-        select
-        	case when sum(`ipa`.`Amount`) = 0 then 0
-        	else sum(`ipa`.`Amount` * `ipa`.`Price`) / sum(`ipa`.`Amount`) end
-        from
-            `InvestmentProductAmounts` `ipa`
-        where
-            `ip`.`InvestmentProductId` = `ipa`.`InvestmentProductId`
-            and `ipa`.`Date` <= `dates`.`Date`) AS `AverageRate`,
-       ifnull(`ipr`.`Value`,
-        (select
-        	`Value`
-        from
-        	`InvestmentProductRates`
-        where 
-        	`InvestmentProductId` = `ip`.`InvestmentProductId`
-        	and `Date` = (select MAX(`Date`) from `InvestmentProductRates` where `InvestmentProductId` = `ip`.`InvestmentProductId` and `Date` <= `dates`.`Date`)
-		)) AS `Rate`,
-         ifnull((select
-        	 `icr`.`Value`
-        from
-        	`InvestmentCurrencyRates` `icr`
-        where 
-        	`icr`.`InvestmentCurrencyUnitId` = `icu`.`Id`
-        	and `Date` = (select MAX(`Date`) from `InvestmentCurrencyRates` where `InvestmentCurrencyUnitId` = `icr`.`InvestmentCurrencyUnitId` and `Date` <= `dates`.`Date`)
-		),1) as `CurrencyRate`
-    from
-    	`dates`
-    inner join `InvestmentProducts` `ip` on 1=1
-    left join `InvestmentProductRates` `ipr` on
-        `ip`.`InvestmentProductId` = `ipr`.`InvestmentProductId`
-        and `dates`.`Date` = `ipr`.`Date`
-    inner join `InvestmentCurrencyUnits` `icu` on
-        `ip`.`InvestmentCurrencyUnitId` = `icu`.`Id`) `sub1`
-where exists(
-select 1
-    from
-        `InvestmentProductAmounts` `ipa`
-    where
-        `sub1`.`InvestmentProductId` = `ipa`.`InvestmentProductId`
-        and `ipa`.`Date` <= `sub1`.`Date`)
-"
+			"""
+			insert into "DailyAssetProgresses"
+			("Date", "InvestmentProductId", "Rate", "Amount", "AverageRate", "CurrencyRate")
+			with recursive dates("Date") as (
+				select (select min("Date") from "InvestmentProductRates")::timestamp
+				union all
+				select "Date" + interval '1 day'
+				from dates
+				where "Date" < (select max("Date") from "InvestmentProductRates")
+			)
+			select
+				sub1."Date" as "Date",
+				sub1."InvestmentProductId" as "InvestmentProductId",
+				sub1."Rate" as "Rate",
+				sub1."Amount" as "Amount",
+				sub1."AverageRate" as "AverageRate",
+				sub1."CurrencyRate" as "CurrencyRate"
+			from (
+				select
+					ip."InvestmentProductId" as "InvestmentProductId",
+					ip."Name" as "ProductName",
+					ip."Category" as "Category",
+					ip."Type" as "Type",
+					ip."InvestmentCurrencyUnitId" as "InvestmentCurrencyUnitId",
+					icu."Name" as "CurrencyName",
+					dates."Date" as "Date",
+					(
+						select sum(ipa."Amount")
+						from "InvestmentProductAmounts" ipa
+						where ip."InvestmentProductId" = ipa."InvestmentProductId"
+						  and ipa."Date" <= dates."Date"
+					) as "Amount",
+					(
+						select 
+							case when sum(ipa."Amount") = 0 then 0
+							else sum(ipa."Amount" * ipa."Price") / sum(ipa."Amount") end
+						from "InvestmentProductAmounts" ipa
+						where ip."InvestmentProductId" = ipa."InvestmentProductId"
+						  and ipa."Date" <= dates."Date"
+					) as "AverageRate",
+					coalesce(
+						ipr."Value",
+						(
+							select "Value"
+							from "InvestmentProductRates"
+							where "InvestmentProductId" = ip."InvestmentProductId"
+							  and "Date" = (
+								  select max("Date")
+								  from "InvestmentProductRates"
+								  where "InvestmentProductId" = ip."InvestmentProductId"
+									and "Date" <= dates."Date"
+							  )
+						)
+					) as "Rate",
+					coalesce(
+						(
+							select icr."Value"
+							from "InvestmentCurrencyRates" icr
+							where icr."InvestmentCurrencyUnitId" = icu."Id"
+							  and "Date" = (
+								  select max("Date")
+								  from "InvestmentCurrencyRates"
+								  where "InvestmentCurrencyUnitId" = icr."InvestmentCurrencyUnitId"
+									and "Date" <= dates."Date"
+							  )
+						),
+						1
+					) as "CurrencyRate"
+				from
+					dates
+				inner join "InvestmentProducts" ip on true
+				left join "InvestmentProductRates" ipr on
+					ip."InvestmentProductId" = ipr."InvestmentProductId"
+					and dates."Date" = ipr."Date"
+				inner join "InvestmentCurrencyUnits" icu on
+					ip."InvestmentCurrencyUnitId" = icu."Id"
+			) sub1
+			where exists (
+				select 1
+				from "InvestmentProductAmounts" ipa
+				where sub1."InvestmentProductId" = ipa."InvestmentProductId"
+				  and ipa."Date" <= sub1."Date"
+			);
+			"""
 		);
 		this._logger.LogInformation("{addedRowCount}件登録", addedRowCount);
 		await this._db.SaveChangesAsync();

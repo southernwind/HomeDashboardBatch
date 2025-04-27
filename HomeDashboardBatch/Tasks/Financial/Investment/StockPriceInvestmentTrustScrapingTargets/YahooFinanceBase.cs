@@ -37,7 +37,7 @@ public abstract class YahooFinanceBase<T> : IScrapingServiceTarget {
 			.Where(x => x != null)
 			.Select(x => {
 			return new YahooFinanceRecord() {
-				Date = DateTime.Parse(x![0]),
+				Date = DateOnly.Parse(x![0]),
 				Open = double.Parse(x[1]),
 				High = double.Parse(x[2]),
 				Low = double.Parse(x[3]),
@@ -62,7 +62,7 @@ public abstract class YahooFinanceBase<T> : IScrapingServiceTarget {
 }
 
 public class YahooFinanceRecord {
-	public DateTime Date {
+	public DateOnly Date {
 		get;
 		set;
 	}
