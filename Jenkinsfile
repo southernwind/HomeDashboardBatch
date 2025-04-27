@@ -9,7 +9,7 @@ node {
     }
 
     stage('Build'){
-      dotnetBuild configuration: 'Release', project: 'HomeDashboardBatch.sln', sdk: '.NET8', unstableIfWarnings: true
+      dotnetBuild configuration: 'Release', project: 'HomeDashboardBatch.sln', sdk: '.NET10', unstableIfWarnings: true
     }
 
     withCredentials( \
@@ -19,7 +19,7 @@ node {
           usernameVariable: 'SSH_USER')]) {
 
       stage('Deploy'){
-        sh 'scp -pr -i ${SSH_KEY} ./HomeDashboardBatch/bin/Release/net8.0/* ${SSH_USER}@batch-server.localnet:/opt/dashboard-batch'
+        sh 'scp -pr -i ${SSH_KEY} ./HomeDashboardBatch/bin/Release/net10.0/* ${SSH_USER}@batch-server.localnet:/opt/dashboard-batch'
         sh 'ssh -i ${SSH_KEY} ${SSH_USER}@batch-server.localnet chmod 755 /opt/dashboard-batch'
       }
     }
