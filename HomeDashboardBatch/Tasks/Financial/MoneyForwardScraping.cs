@@ -212,8 +212,9 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 				{ "responseType", urlParams1.ResponseType},
 				{ "scope", urlParams1.Scope},
 				{ "state", urlParams1.State},
+				{ "codeChallenge",urlParams1.CodeChallenge },
+				{ "codeChallengeMethod", urlParams1.CodeChallengeMethod },
 				{ "nonce", urlParams1.Nonce},
-				{ "selectAccount", urlParams1.SelectAccount},
 				{ "mfid_user[email]", this._config.Id},
 				{ "mfid_user[password]",this._config.Password }
 			});
@@ -246,8 +247,9 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 				{ "responseType", urlParams2.ResponseType},
 				{ "scope", urlParams2.Scope},
 				{ "state", urlParams2.State},
+				{ "codeChallenge",urlParams2.CodeChallenge },
+				{ "codeChallengeMethod", urlParams2.CodeChallengeMethod },
 				{ "nonce", urlParams2.Nonce},
-				{ "selectAccount", urlParams2.SelectAccount},
 				{ "email_otp", otp},
 			});
 
@@ -304,13 +306,18 @@ public partial class MoneyForwardScraping(ILogger<MoneyForwardScraping> logger, 
 			get;
 			set;
 		} = null!;
-		[JsonPropertyName("nonce")]
-		public string Nonce {
+		[JsonPropertyName("codeChallenge")]
+		public string CodeChallenge {
 			get;
 			set;
 		} = null!;
-		[JsonPropertyName("selectAccount")]
-		public string SelectAccount {
+		[JsonPropertyName("codeChallengeMethod")]
+		public string CodeChallengeMethod {
+			get;
+			set;
+		} = null!;
+		[JsonPropertyName("nonce")]
+		public string Nonce {
 			get;
 			set;
 		} = null!;
